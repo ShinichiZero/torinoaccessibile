@@ -2,10 +2,11 @@
 
 Updated: 2026-10-08
 
-- Branch: `fix/accessibility-audit`
-- Base remediation commit: `db61360` (`fix: complete accessibility and GTFS audit remediation`), based on `e3dfa72ff4f5becafc74920694e1e1ceee73057f`; latest fully tested PR head before this checkpoint refresh: `b153408`.
-- Remote: `origin` = `https://github.com/ShinichiZero/torinoaccessibile.git`; `git fetch origin` succeeded with escalation during this session.
-- Source, refreshed dataset, tests, workflows, and documentation are committed. Final local checks pass: lint, 29 unit tests, 15 E2E tests, build, audit (0 vulnerabilities), and `git diff --check`. On exact PR head `b153408`, GitHub CI passed all steps and the protected Vercel preview passed 15/15 browser tests, including the no-runtime/console-error check.
+- Branch: `docs/release-verification`, based on merged `main` commit `a1bdc5e77e36c4f37b91edc3ee0d3202c9cd0603`.
+- Release PR: [#1](https://github.com/ShinichiZero/torinoaccessibile/pull/1), merged with squash. Working branch was `fix/accessibility-audit`; tested head `cbb24549132d3bd528b3bdd04bb28cff34d68a26`.
+- Remote: `origin` = `https://github.com/ShinichiZero/torinoaccessibile.git`.
+- Production deployment: `dpl_7YCt8vbH69TrLqdEL3NtLoAoMPUX`, state READY, deployed commit `a1bdc5e77e36c4f37b91edc3ee0d3202c9cd0603`, aliases include `torino-accessibile.vercel.app`.
+- Anonymous production Chromium smoke: PASS, 15/15. The exact protected PR preview also passed 15/15; GitHub CI passed install, lint, unit, browser install, E2E, and build. Local lint, 29 unit tests, 15 E2E tests, build, dependency audit (0 vulnerabilities), GTFS validation, and `git diff --check` passed.
 
 ## Completed in this session
 
@@ -16,14 +17,14 @@ Updated: 2026-10-08
 - E2E mocked OSM success, 429, and 503/504 failover; no live Overpass traffic.
 - Ran `npm run refresh:gtfs` with approved network access; aperTO CKAN returned official 15.04 MB `gtt_gtfs.zip`, reported catalog timestamp 2020-01-07, and feed_info declared version `20261007` / coverage 2026-10-06–2027-01-31. Freshness follows a valid date-shaped feed version when available, retaining both other timestamps.
 
-## Modified files
+## Current follow-up
 
-Application/services/scripts/workflows/package files and new tests/configs are listed by `git status --short`; this includes `.github/workflows/ci.yml`, `.github/workflows/refresh-gtfs.yml`, `package.json`, lockfile, GTFS scripts/services, `src/App.*`, `src/components/MapView.jsx`, `src/components/StopSearch.jsx`, `src/services/stopSearch.js`, Playwright/Vitest configs, and `tests/`. This checkpoint and the rest of `docs/` are new. `.gitignore` includes local test output ignores; preserve preexisting local `.vercel` entries.
+This branch updates only release documentation with the production deployment ID, SHA, public alias, and anonymous smoke result. It must be reviewed and merged through a separate documentation PR. No application code changes are pending.
 
-## Open issues / exact next actions
+## Remaining limitations
 
-1. Verify the current branch HEAD and its GitHub CI/Vercel status; if green, merge PR #1 with the supported squash method and expected HEAD SHA.
-2. The VoiceOver/manual screen-reader gap is documented; no formal compliance claim is made. Do not merge if a critical gate remains unverified.
-3. Once exact-head checks pass, merge using supported GitHub merge; then verify production deployment and anonymous smoke.
+- VoiceOver/manual screen-reader QA was not run; no formal WCAG conformance claim is made.
+- No live Overpass request was made; external OSM responses were mocked.
+- aperTO's catalog timestamp differs from the GTFS feed version; both are documented and shown separately.
 
-PR #1 is open. Exact head `b153408` has green CI and Vercel; protected-preview Playwright passed 15/15. No production deployment, live Overpass integration, or manual screen-reader test has been performed. Check current HEAD before merge; production verification follows the merge.
+Next action: review and merge the documentation-only follow-up PR. No production redeploy is required for docs-only changes; verify that Vercel continues to point its production alias at the release deployment.

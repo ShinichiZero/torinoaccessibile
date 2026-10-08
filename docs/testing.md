@@ -14,9 +14,11 @@ Results below were executed locally on 2026-10-08 after `npm ci`.
 | `npm audit` | PASS | 0 vulnerabilities (full dependency tree). |
 | GTFS structural validation | PASS | Refreshed official feed: 7,054 features, unique IDs, valid coordinates/geometries, expected value counts; see `data-sources.md`. |
 | `git diff --check` | PASS | No whitespace errors after the final source, dataset, and documentation edits. |
-| GitHub CI | PASS on `b153408` | All job steps passed: install, lint, 29 unit tests, browser install, 15 E2E tests, and build. The first PR-head run had 13/14 E2E pass because a keyboard test depended on native select behavior; the test was simplified and CI passed on subsequent heads. |
-| Protected PR preview | PASS on `b153408` | Vercel Ready deployment `torino-accessibile-4q65r159g-elle6.vercel.app`, exact PR head; Playwright ran 15/15 against deployed app using a short-lived Vercel token scoped only to that origin, including a no-runtime/console-errors smoke. |
-| Live Overpass / production | NOT RUN | OSM requests are mocked in E2E. Production stays on main; no production smoke/deploy performed. |
+| GitHub CI | PASS on `cbb2454` | All job steps passed: install, lint, 29 unit tests, browser install, 15 E2E tests, and build. The first PR-head run had 13/14 E2E pass because a keyboard test depended on native select behavior; the test was simplified and CI passed on the final head. |
+| Protected PR preview | PASS | Vercel Ready deployment `torino-accessibile-3tbttr4xr-elle6.vercel.app`, exact PR #1 head; Playwright ran 15/15 using short-lived auth scoped only to the preview origin. |
+| Production deployment | PASS | Vercel deployment `dpl_7YCt8vbH69TrLqdEL3NtLoAoMPUX` is READY for squash SHA `a1bdc5e77e36c4f37b91edc3ee0d3202c9cd0603`; alias `torino-accessibile.vercel.app`. |
+| Anonymous production smoke | PASS | `BASE_URL=https://torino-accessibile.vercel.app npm run test:e2e`: 15/15 Chromium tests, including dataset counts, search, filters, map, mobile layouts, axe, and no initial runtime/console errors. |
+| Live Overpass | NOT RUN | OSM requests are mocked in E2E; no live public endpoint traffic was made. |
 | Manual screen reader QA | NOT RUN | VoiceOver not exercised. |
 
 Unit tests exercise GTFS parsing and normalization, feed metadata, CSV quoting/multiline/BOM/line endings and invalid input, atomic output preservation, search/filter behavior, and Overpass bounding boxes, aborts, timeouts, rate limits, and failover. E2E stubs all external map/Overpass traffic. The Playwright config accepts `BASE_URL`; protected preview runs add the short-lived OIDC header only to that exact `.vercel.app` origin. Live public Overpass availability is intentionally not part of ordinary CI.
