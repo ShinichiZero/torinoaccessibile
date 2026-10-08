@@ -3,9 +3,9 @@
 Updated: 2026-10-08
 
 - Branch: `fix/accessibility-audit`
-- Base remediation commit: `db61360` (`fix: complete accessibility and GTFS audit remediation`), based on `e3dfa72ff4f5becafc74920694e1e1ceee73057f`; final code/test commit `83b101c`.
+- Base remediation commit: `db61360` (`fix: complete accessibility and GTFS audit remediation`), based on `e3dfa72ff4f5becafc74920694e1e1ceee73057f`; latest fully tested PR head before this checkpoint refresh: `b153408`.
 - Remote: `origin` = `https://github.com/ShinichiZero/torinoaccessibile.git`; `git fetch origin` succeeded with escalation during this session.
-- Source, refreshed dataset, tests, workflows, and documentation are committed through `83b101c`. Final local checks pass: lint, 29 unit tests, 15 E2E tests, build, audit (0 vulnerabilities), and `git diff --check`. Exact-head GitHub CI passed all steps and the protected Vercel preview passed 15/15 browser tests, including the no-runtime/console-error check.
+- Source, refreshed dataset, tests, workflows, and documentation are committed. Final local checks pass: lint, 29 unit tests, 15 E2E tests, build, audit (0 vulnerabilities), and `git diff --check`. On exact PR head `b153408`, GitHub CI passed all steps and the protected Vercel preview passed 15/15 browser tests, including the no-runtime/console-error check.
 
 ## Completed in this session
 
@@ -22,8 +22,8 @@ Application/services/scripts/workflows/package files and new tests/configs are l
 
 ## Open issues / exact next actions
 
-1. Commit/push this final documentation update; rerun CI and confirm Vercel status for that exact head.
+1. Verify the current branch HEAD and its GitHub CI/Vercel status; if green, merge PR #1 with the supported squash method and expected HEAD SHA.
 2. The VoiceOver/manual screen-reader gap is documented; no formal compliance claim is made. Do not merge if a critical gate remains unverified.
 3. Once exact-head checks pass, merge using supported GitHub merge; then verify production deployment and anonymous smoke.
 
-PR #1 is open. Pushed head `83b101c` has green CI and Vercel; its protected preview Playwright run passed 15/15. No production deployment, live Overpass integration, or manual screen-reader test has been performed. This documentation-only follow-up still needs exact-head CI/status recheck before merge.
+PR #1 is open. Exact head `b153408` has green CI and Vercel; protected-preview Playwright passed 15/15. No production deployment, live Overpass integration, or manual screen-reader test has been performed. Check current HEAD before merge; production verification follows the merge.
