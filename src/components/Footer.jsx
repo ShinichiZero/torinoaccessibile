@@ -18,13 +18,9 @@ export default function Footer() {
           <div className="app-footer__sources">
             <strong>Fonti dati</strong>
 
-            <p>
-              Data © OpenStreetMap contributors
-            </p>
+            <p><a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">© OpenStreetMap contributors</a></p>
 
-            <p>
-              Dataset GTT/5T
-            </p>
+            <p><a href="https://aperto.comune.torino.it/dataset/feed-gtfs-trasporti-gtt" target="_blank" rel="noreferrer">Feed GTFS GTT su aperTO</a></p>
           </div>
         </div>
 
@@ -58,6 +54,7 @@ export default function Footer() {
           <span>
             Licenza MIT
           </span>
+          <a href="https://github.com/ShinichiZero/torinoaccessibile/issues" target="_blank" rel="noreferrer">Contatti e correzioni</a>
         </div>
       </div>
     </footer>

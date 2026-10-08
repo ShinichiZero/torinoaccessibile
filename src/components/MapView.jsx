@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   MapContainer,
   Marker,
@@ -11,16 +11,17 @@ import MarkerClusterGroup from 'react-leaflet-cluster';
 import 'leaflet/dist/leaflet.css';
 
 import { fetchOverpassAccessibility } from '../services/overpassApi';
-import { parseGtfsStops } from '../services/gtfsParser';
+import { isGtfsDatasetStale, parseGtfsStops } from '../services/gtfsParser';
+import StopSearch from './StopSearch';
 
 const TORINO_BOUNDS = [
-  [44.95, 7.55],
-  [45.15, 7.85],
+  [44.30, 7.05],
+  [45.65, 8.55],
 ];
 
 const TORINO_CENTER = [45.0703, 7.6869];
 
-const DEFAULT_BBOX = '7.55,44.95,7.85,45.15';
+const DEFAULT_BBOX = '7.05,44.30,8.55,45.65';
 
 const OSM_COOLDOWN_MS = 60_000;
 
@@ -50,7 +51,19 @@ function MapControls({ onBboxChange }) {
   return null;
 }
 
-function MarkerWithPopup({ feature, icon }) {
+function FocusSelectedStop({ stop }) {
+  const map = useMap();
+  useEffect(() => {
+    if (stop) map.flyTo([stop.lat, stop.lon], Math.max(map.getZoom(), 15), { animate: false });
+  }, [map, stop]);
+  return null;
+}
+
+function MarkerWithPopup({ feature, icon, selected = false, onSelect }) {
+  const markerRef = useRef(null);
+  useEffect(() => {
+    if (selected) markerRef.current?.openPopup();
+  }, [selected]);
   const { lat, lon, properties = {} } = feature;
 
   if (
@@ -70,15 +83,18 @@ function MarkerWithPopup({ feature, icon }) {
 
   const wheelchairLabel =
     properties.wheelchair === 'yes'
-      ? 'Accessibile'
+      ? 'sì'
       : properties.wheelchair === 'no'
-        ? 'Non accessibile'
-        : 'Informazione non disponibile';
+        ? 'no'
+        : 'informazione non disponibile';
 
   return (
     <Marker
       position={[lat, lon]}
       icon={icon}
+      ref={markerRef}
+      title={`${title}. ${isGtfs ? `Accessibilità indicata nel feed GTFS: ${wheelchairLabel}` : 'Elemento OpenStreetMap'}`}
+      eventHandlers={isGtfs && onSelect ? { click: () => onSelect(feature) } : undefined}
     >
       <Popup>
         <div className="map-popup">
@@ -95,9 +111,11 @@ function MarkerWithPopup({ feature, icon }) {
                 />
 
                 <strong>
-                  {wheelchairLabel}
+                  Valore GTFS: {wheelchairLabel}
                 </strong>
               </div>
+
+              <p>Valore del campo GTFS wheelchair_boarding. Il significato dipende dal tipo di fermata e non verifica il veicolo o l’intero percorso.</p>
 
               {properties.stopCode && (
                 <p>
@@ -174,8 +192,9 @@ function MarkerWithPopup({ feature, icon }) {
 
           <p className="map-popup__source">
             Fonte:{' '}
-            {properties.source ||
-              'OpenStreetMap'}
+            <a href={properties.sourceUrl || 'https://www.openstreetmap.org/copyright'} target="_blank" rel="noreferrer">
+              {properties.source || 'OpenStreetMap'}
+            </a>
           </p>
         </div>
       </Popup>
@@ -183,7 +202,7 @@ function MarkerWithPopup({ feature, icon }) {
   );
 }
 
-export default function MapView() {
+export default function MapView({ onDatasetChange }) {
   const [gtfsStops, setGtfsStops] = useState([]);
   const [osmFeatures, setOsmFeatures] = useState([]);
 
@@ -207,6 +226,12 @@ export default function MapView() {
 
   const [cooldownNow, setCooldownNow] =
     useState(0);
+  const [datasetMetadata, setDatasetMetadata] = useState({});
+  const [osmLoadedBbox, setOsmLoadedBbox] = useState(null);
+  const [osmLoadedAt, setOsmLoadedAt] = useState(null);
+  const [selectedStop, setSelectedStop] = useState(null);
+  const activeOsmController = useRef(null);
+  const osmRequestId = useRef(0);
 
   /*
    * GTFS principale.
@@ -223,7 +248,10 @@ export default function MapView() {
           await parseGtfsStops();
 
         if (!cancelled) {
-          setGtfsStops(stops);
+          setGtfsStops(stops.stops);
+          setDatasetMetadata(stops.metadata);
+          const isStale = isGtfsDatasetStale(stops.metadata);
+          onDatasetChange?.({ status: 'ready', stops: stops.stops, metadata: stops.metadata, isStale });
         }
       } catch (error) {
         console.error(
@@ -236,6 +264,7 @@ export default function MapView() {
             error?.message ||
               'Impossibile caricare le fermate GTT.'
           );
+          onDatasetChange?.({ status: 'error', stops: [], metadata: {} });
         }
       } finally {
         if (!cancelled) {
@@ -249,7 +278,18 @@ export default function MapView() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [onDatasetChange]);
+
+  useEffect(() => {
+    if (activeOsmController.current) {
+      activeOsmController.current.abort();
+      setOsmLoading(false);
+    }
+    return () => {
+      osmRequestId.current += 1;
+      activeOsmController.current?.abort();
+    };
+  }, [bbox]);
 
   /*
    * Timer cooldown OSM.
@@ -263,9 +303,9 @@ export default function MapView() {
 
     const interval =
       window.setInterval(() => {
-        setCooldownNow(
-          Date.now()
-        );
+        const now = Date.now();
+        setCooldownNow(now);
+        if (now >= osmCooldownUntil) window.clearInterval(interval);
       }, 1000);
 
     return () => {
@@ -292,29 +332,36 @@ export default function MapView() {
 
       setOsmLoading(true);
       setOsmError(null);
+      const requestedBbox = bbox;
+      const requestId = ++osmRequestId.current;
+      const controller = new AbortController();
+      activeOsmController.current = controller;
 
       try {
         console.info(
           '[Torino Accessibile] Richiesta OSM:',
-          bbox
+          requestedBbox
         );
 
         const features =
-          await fetchOverpassAccessibility(
-            bbox
-          );
+          await fetchOverpassAccessibility(requestedBbox, { signal: controller.signal });
+
+        if (requestId !== osmRequestId.current) return;
 
         setOsmFeatures(
           Array.isArray(features)
             ? features
             : []
         );
+        setOsmLoadedBbox(requestedBbox);
+        setOsmLoadedAt(new Date().toISOString());
 
         console.info(
           '[Torino Accessibile] Elementi OSM:',
           features?.length ?? 0
         );
       } catch (error) {
+        if (error?.name === 'AbortError' || requestId !== osmRequestId.current) return;
         console.error(
           '[Torino Accessibile] Overpass:',
           error
@@ -354,7 +401,7 @@ export default function MapView() {
           setCooldownNow(Date.now());
         }
       } finally {
-        setOsmLoading(false);
+        if (requestId === osmRequestId.current) setOsmLoading(false);
       }
     },
     [
@@ -505,8 +552,15 @@ export default function MapView() {
 
   const mapMarkers =
     useMemo(() => {
+      const [rawMinLon, rawMinLat, rawMaxLon, rawMaxLat] = bbox.split(',').map(Number);
+      const lonInset = (rawMaxLon - rawMinLon) * 0.04;
+      const latInset = (rawMaxLat - rawMinLat) * 0.04;
+      const minLon = rawMinLon + lonInset;
+      const maxLon = rawMaxLon - lonInset;
+      const minLat = rawMinLat + latInset;
+      const maxLat = rawMaxLat - latInset;
       const gtfs =
-        gtfsStops.map(
+        gtfsStops.filter(({ lat, lon }) => lat >= minLat && lat <= maxLat && lon >= minLon && lon <= maxLon).map(
           (feature, index) => (
             <MarkerWithPopup
               key={
@@ -517,12 +571,14 @@ export default function MapView() {
               icon={getGtfsIcon(
                 feature
               )}
+                selected={feature.id === selectedStop?.id}
+                onSelect={setSelectedStop}
             />
           )
         );
 
       const osm =
-        osmFeatures.map(
+        osmFeatures.filter(({ lat, lon }) => lat >= minLat && lat <= maxLat && lon >= minLon && lon <= maxLon).map(
           (feature, index) => (
             <MarkerWithPopup
               key={
@@ -544,24 +600,42 @@ export default function MapView() {
     }, [
       gtfsStops,
       osmFeatures,
+      bbox,
       getGtfsIcon,
       getOsmIcon,
+      selectedStop?.id,
     ]);
 
   return (
     <div className="map-container">
+      <StopSearch
+        stops={gtfsStops}
+        metadata={datasetMetadata}
+        loading={gtfsLoading}
+        error={gtfsError}
+        selectedStop={selectedStop}
+        onSelectStop={setSelectedStop}
+      />
+      <div className="map-toolbar">
+        <div className="map-toolbar__stats"><strong>{gtfsStops.length.toLocaleString('it-IT')}</strong><span>fermate GTT</span></div>
+        <button type="button" className="osm-button" onClick={loadOsmData} disabled={osmLoading || cooldownRemaining > 0}>
+          {osmLoading ? 'Caricamento…' : cooldownRemaining > 0 ? `Riprova tra ${cooldownRemaining}s` : osmFeatures.length > 0 ? 'Aggiorna dati OSM' : 'Carica dati OpenStreetMap'}
+        </button>
+      </div>
       <div className="map-shell">
+        <div className="map-region" role="region" aria-label="Mappa interattiva delle fermate GTT e degli elementi OpenStreetMap">
         <MapContainer
           center={TORINO_CENTER}
-          zoom={13}
-          minZoom={11}
+          zoom={12}
+          minZoom={7}
           maxZoom={18}
           maxBounds={TORINO_BOUNDS}
           maxBoundsViscosity={0.8}
           scrollWheelZoom
+          attributionControl={false}
         >
           <TileLayer
-            attribution="&copy; OpenStreetMap contributors"
+            attribution=""
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           />
 
@@ -570,6 +644,8 @@ export default function MapView() {
               setBbox
             }
           />
+
+          <FocusSelectedStop stop={selectedStop} />
 
           {needsClustering ? (
             <MarkerClusterGroup
@@ -582,6 +658,7 @@ export default function MapView() {
             mapMarkers
           )}
         </MapContainer>
+        </div>
 
         {gtfsLoading && (
           <div
@@ -602,92 +679,30 @@ export default function MapView() {
           </div>
         )}
 
-        <div className="map-toolbar">
-          <div className="map-toolbar__stats">
-            <strong>
-              {gtfsStops.length.toLocaleString(
-                'it-IT'
-              )}
-            </strong>
-
-            <span>
-              fermate GTT
-            </span>
-          </div>
-
-          <button
-            type="button"
-            className="osm-button"
-            onClick={
-              loadOsmData
-            }
-            disabled={
-              osmLoading ||
-              cooldownRemaining > 0
-            }
-          >
-            {osmLoading
-              ? 'Caricamento…'
-              : cooldownRemaining > 0
-                ? `Riprova tra ${cooldownRemaining}s`
-                : osmFeatures.length > 0
-                  ? 'Aggiorna dati OSM'
-                  : 'Carica dati OpenStreetMap'}
-          </button>
-        </div>
-
-        {(gtfsError ||
-          osmError) && (
-          <aside
-            className="map-warning"
-            role="status"
-            aria-live="polite"
-          >
-            <strong>
-              Alcuni dati non sono disponibili
-            </strong>
-
-            {gtfsError && (
-              <p>
-                Fermate GTT:{' '}
-                {gtfsError}
-              </p>
-            )}
-
-            {osmError && (
-              <p>
-                {osmError}
-              </p>
-            )}
-          </aside>
-        )}
-
-        <div className="map-legend">
-          <strong>
-            Legenda
-          </strong>
-
-          <div className="legend-item">
-            <span className="legend-dot legend-dot--yes" />
-            Accessibilità dichiarata
-          </div>
-
-          <div className="legend-item">
-            <span className="legend-dot legend-dot--no" />
-            Non accessibile dichiarata
-          </div>
-
-          <div className="legend-item">
-            <span className="legend-dot legend-dot--unknown" />
-            Informazione non disponibile
-          </div>
-
-          <div className="legend-item">
-            <span className="legend-dot legend-dot--osm" />
-            Elemento OpenStreetMap
-          </div>
-        </div>
       </div>
+
+      {(gtfsError || osmError) && (
+        <aside className="map-warning" role="status" aria-live="polite">
+          <strong>Alcuni dati non sono disponibili</strong>
+          {gtfsError && <p>Fermate GTT: {gtfsError}</p>}
+          {osmError && <p>{osmError}</p>}
+        </aside>
+      )}
+
+      <div className="map-legend">
+        <strong>Legenda</strong>
+        <div className="legend-item"><span className="legend-dot legend-dot--yes" aria-hidden="true" />GTFS: valore “sì”</div>
+        <div className="legend-item"><span className="legend-dot legend-dot--no" aria-hidden="true" />GTFS: valore “no”</div>
+        <div className="legend-item"><span className="legend-dot legend-dot--unknown" aria-hidden="true" />Informazione non disponibile</div>
+        <div className="legend-item"><span className="legend-dot legend-dot--osm" aria-hidden="true" />Elemento OpenStreetMap</div>
+        <span className="map-attribution">Mappa: <a href="https://leafletjs.com" target="_blank" rel="noreferrer">Leaflet</a>. Dati mappa © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">OpenStreetMap contributors</a>.</span>
+      </div>
+
+      {osmLoadedBbox && (
+        <p className="osm-region-note" role="status">
+          OSM caricati {osmLoadedAt && new Intl.DateTimeFormat('it-IT', { hour: '2-digit', minute: '2-digit' }).format(new Date(osmLoadedAt))} per l’area visibile al momento della richiesta (lon/lat: {osmLoadedBbox}). Sposta la mappa e aggiorna per un’altra zona.
+        </p>
+      )}
 
       <div className="map-data-bar">
         <div>
@@ -698,7 +713,7 @@ export default function MapView() {
           </strong>
 
           <span>
-            accessibili
+            con “sì” nel campo GTFS
           </span>
         </div>
 
@@ -710,7 +725,7 @@ export default function MapView() {
           </strong>
 
           <span>
-            non accessibili
+            con “no” nel campo GTFS
           </span>
         </div>
 
