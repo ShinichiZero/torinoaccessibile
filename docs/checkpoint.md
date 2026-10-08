@@ -3,9 +3,9 @@
 Updated: 2026-10-08
 
 - Branch: `fix/accessibility-audit`
-- Base remediation commit: `db61360` (`fix: complete accessibility and GTFS audit remediation`), based on `e3dfa72ff4f5becafc74920694e1e1ceee73057f`; latest pushed implementation/test commit `c7a7f18`.
+- Base remediation commit: `db61360` (`fix: complete accessibility and GTFS audit remediation`), based on `e3dfa72ff4f5becafc74920694e1e1ceee73057f`; final code/test commit `83b101c`.
 - Remote: `origin` = `https://github.com/ShinichiZero/torinoaccessibile.git`; `git fetch origin` succeeded with escalation during this session.
-- Source, refreshed dataset, tests, workflows, and documentation are committed through `c7a7f18`. Final local combined suite passes (29 unit + 15 E2E), build passes, and `git diff --check` passes. On `c7a7f18`, GitHub CI passed all steps (29 unit + 14 E2E) and exact protected Vercel preview passed 14/14. The new no-console/page-error assertion was then added and passes locally; commit/push it with this checkpoint update and rerun exact-head CI/preview.
+- Source, refreshed dataset, tests, workflows, and documentation are committed through `83b101c`. Final local checks pass: lint, 29 unit tests, 15 E2E tests, build, audit (0 vulnerabilities), and `git diff --check`. Exact-head GitHub CI passed all steps and the protected Vercel preview passed 15/15 browser tests, including the no-runtime/console-error check.
 
 ## Completed in this session
 
@@ -22,8 +22,8 @@ Application/services/scripts/workflows/package files and new tests/configs are l
 
 ## Open issues / exact next actions
 
-1. Commit/push the no-console/page-error assertion and final verification docs; inspect the resulting exact-head CI and Vercel status and run the preview suite.
+1. Commit/push this final documentation update; rerun CI and confirm Vercel status for that exact head.
 2. The VoiceOver/manual screen-reader gap is documented; no formal compliance claim is made. Do not merge if a critical gate remains unverified.
 3. Once exact-head checks pass, merge using supported GitHub merge; then verify production deployment and anonymous smoke.
 
-PR #1 is open. Current pushed head `c7a7f18` has green CI and Vercel, and protected preview Playwright passed 14/14. A new local 15th browser test checks no runtime/console errors and passes locally. No production deployment, live Overpass integration, or manual screen-reader test has been performed. Commit the test/docs update, then recheck the exact head before merge.
+PR #1 is open. Pushed head `83b101c` has green CI and Vercel; its protected preview Playwright run passed 15/15. No production deployment, live Overpass integration, or manual screen-reader test has been performed. This documentation-only follow-up still needs exact-head CI/status recheck before merge.

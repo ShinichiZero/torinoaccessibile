@@ -14,8 +14,8 @@ Results below were executed locally on 2026-10-08 after `npm ci`.
 | `npm audit` | PASS | 0 vulnerabilities (full dependency tree). |
 | GTFS structural validation | PASS | Refreshed official feed: 7,054 features, unique IDs, valid coordinates/geometries, expected value counts; see `data-sources.md`. |
 | `git diff --check` | PASS | No whitespace errors after the final source, dataset, and documentation edits. |
-| GitHub CI | PASS on `c7a7f18` | All job steps passed: install, lint, 29 unit tests, browser install, 14 E2E tests, and build. The first PR-head run had 13/14 E2E pass because a keyboard test depended on native select behavior; the test was simplified and the rerun passed. The added console/runtime smoke is pending CI on the next head. |
-| Protected PR preview | PASS on `c7a7f18` | Vercel Ready deployment `torino-accessibile-fma5d4jgi-elle6.vercel.app`, exact PR head; Playwright ran 14/14 against deployed app using a short-lived Vercel token scoped only to that origin. Repeat after the added console/runtime smoke commit. |
+| GitHub CI | PASS on `83b101c` | All job steps passed: install, lint, 29 unit tests, browser install, 15 E2E tests, and build. The first PR-head run had 13/14 E2E pass because a keyboard test depended on native select behavior; the test was simplified and CI passed on subsequent heads. |
+| Protected PR preview | PASS on `83b101c` | Vercel Ready deployment `torino-accessibile-q8te2xc3r-elle6.vercel.app`, exact PR head; Playwright ran 15/15 against deployed app using a short-lived Vercel token scoped only to that origin, including a no-runtime/console-errors smoke. |
 | Live Overpass / production | NOT RUN | OSM requests are mocked in E2E. Production stays on main; no production smoke/deploy performed. |
 | Manual screen reader QA | NOT RUN | VoiceOver not exercised. |
 
