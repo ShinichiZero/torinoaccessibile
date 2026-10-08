@@ -3,9 +3,9 @@
 Updated: 2026-10-08
 
 - Branch: `fix/accessibility-audit`
-- Current base commit before these uncommitted changes: `e3dfa72ff4f5becafc74920694e1e1ceee73057f` (`Improve accessibility, GTFS reliability and data transparency`).
+- Remediation commit: `db61360` (`fix: complete accessibility and GTFS audit remediation`), based on `e3dfa72ff4f5becafc74920694e1e1ceee73057f`.
 - Remote: `origin` = `https://github.com/ShinichiZero/torinoaccessibile.git`; `git fetch origin` succeeded with escalation during this session.
-- Working tree is dirty with remediation source, refreshed dataset, tests/workflows and documentation. Preserve all changes; do not reset/clean.
+- Source, refreshed dataset, tests, workflows, and documentation are committed. A checkpoint-only documentation update may follow; preserve any later changes and do not reset/clean.
 
 ## Completed in this session
 
@@ -22,9 +22,8 @@ Application/services/scripts/workflows/package files and new tests/configs are l
 
 ## Open issues / exact next actions
 
-1. Rerun `git diff --check`, inspect all changes for secrets/generated test output, and update the final test table.
-2. Commit and push the authorized branch; create/review the PR and inspect exact-head CI and Vercel preview.
-3. Perform manual screen reader QA if available. Do not merge if any critical gate remains unverified.
-4. Only after every gate genuinely passes, merge using supported GitHub merge; then verify production deployment and anonymous smoke.
+1. Push the committed authorized branch and create/review the PR; inspect exact-head CI and Vercel preview.
+2. Perform manual screen reader QA if available. Do not merge if any critical gate remains unverified.
+3. Only after every gate genuinely passes, merge using supported GitHub merge; then verify production deployment and anonymous smoke.
 
 No remediation PR, CI run, preview for the final head, production deployment, live Overpass integration, or manual screen-reader test has been verified yet. Existing Vercel preview for `e3dfa72` is Ready; it predates current changes.
