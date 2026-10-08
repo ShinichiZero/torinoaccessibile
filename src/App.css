@@ -176,6 +176,12 @@
   box-shadow: 0 12px 35px rgba(16, 24, 40, 0.12);
 }
 
+.stats-note {
+  margin: 0.65rem 0 0;
+  color: #475467;
+  font-size: 0.8rem;
+}
+
 .stat-card {
   min-height: 125px;
   padding: 1.25rem 1.4rem;
@@ -525,6 +531,77 @@
   font-weight: 600;
 }
 
+.osm-region-note {
+  margin: 0;
+  padding: 0.6rem 0.75rem;
+  border-top: 1px solid #d9dee5;
+  background: #f8fafc;
+  color: #344054;
+  font-size: 0.72rem;
+  line-height: 1.5;
+}
+
+.stop-search {
+  padding: 1.25rem;
+  border-top: 1px solid #d9dee5;
+  background: #fff;
+}
+
+.stop-search__heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 1rem;
+}
+
+.stop-search__heading h3 { margin: 0; color: #101828; font-size: 1.15rem; }
+.stop-search__heading p { margin: 0.35rem 0 0; color: #667085; font-size: 0.85rem; }
+.stop-search__heading > span { color: #475467; font-size: 0.8rem; }
+
+.stop-search__controls {
+  margin: 1rem 0;
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) minmax(150px, 0.5fr);
+  gap: 0.4rem 0.75rem;
+  max-width: 760px;
+}
+
+.stop-search__controls label { color: #344054; font-size: 0.8rem; font-weight: 700; }
+.stop-search__controls input, .stop-search__controls select { min-height: 44px; padding: 0.55rem 0.7rem; border: 1px solid #98a2b3; border-radius: 7px; background: #fff; color: #101828; }
+.stop-search__count { margin: 0.75rem 0; color: #475467; font-size: 0.8rem; }
+
+.stop-results {
+  max-height: 420px;
+  margin: 0;
+  padding: 0;
+  overflow: auto;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem;
+  list-style: none;
+}
+
+.stop-results button {
+  width: 100%;
+  min-height: 58px;
+  padding: 0.65rem 0.75rem;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.25rem;
+  border: 1px solid #d0d5dd;
+  border-radius: 7px;
+  background: #fff;
+  color: #101828;
+  text-align: left;
+  cursor: pointer;
+}
+
+.stop-results button:hover { background: #f2f7ff; border-color: #005fcc; }
+.stop-results button span { color: #475467; font-size: 0.75rem; }
+.selected-stop { margin: 1rem 0; padding: 0.9rem; display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center; border-left: 4px solid #005fcc; background: #f2f7ff; color: #101828; }
+.selected-stop button { min-height: 40px; padding: 0.4rem 0.7rem; border: 1px solid #005fcc; border-radius: 6px; background: white; color: #004a99; cursor: pointer; }
+
 /* =========================================
    POPUP
    ========================================= */
@@ -668,6 +745,9 @@
   font-size: 0.78rem;
   line-height: 1.65;
 }
+
+.app-footer a { color: #c6e0ff; }
+.app-footer a:focus-visible { outline-color: #fff; }
 
 .app-footer__sources p {
   margin-top: 0.3rem;
@@ -835,6 +915,10 @@ a:focus-visible,
     min-width: 195px;
     max-width: 220px;
   }
+
+  .stop-search__heading { align-items: flex-start; flex-direction: column; }
+  .stop-search__controls { grid-template-columns: 1fr; }
+  .stop-results { grid-template-columns: 1fr; }
 
   .map-warning {
     top: 7.8rem;

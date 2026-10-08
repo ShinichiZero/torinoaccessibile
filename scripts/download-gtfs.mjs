@@ -17,6 +17,7 @@ const OUTPUT_FILE = path.join(
   OUTPUT_DIR,
   'torino_gtfs.zip'
 );
+const METADATA_FILE = path.join(OUTPUT_DIR, 'torino_gtfs.metadata.json');
 
 async function getGtfsResourceUrl() {
   console.log('Recupero metadata GTFS da aperTO...');
@@ -82,11 +83,11 @@ async function getGtfsResourceUrl() {
     `URL: ${resource.url}`
   );
 
-  return resource.url;
+  return resource;
 }
 
 async function downloadGtfs() {
-  const gtfsUrl =
+  const resource =
     await getGtfsResourceUrl();
 
   console.log('');
@@ -95,7 +96,7 @@ async function downloadGtfs() {
   );
 
   const response = await fetch(
-    gtfsUrl,
+    resource.url,
     {
       redirect: 'follow',
       headers: {
@@ -133,6 +134,12 @@ async function downloadGtfs() {
     OUTPUT_FILE,
     buffer
   );
+  fs.writeFileSync(METADATA_FILE, JSON.stringify({
+    resourceName: resource.name ?? null,
+    sourceUpdatedAt: resource.last_modified ?? resource.metadata_modified ?? null,
+    sourceUrl: resource.url,
+    downloadedAt: new Date().toISOString(),
+  }, null, 2));
 
   console.log('');
   console.log(

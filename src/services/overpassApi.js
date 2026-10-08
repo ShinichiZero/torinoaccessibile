@@ -102,7 +102,7 @@ function buildNote(tags) {
   return notes.length > 0 ? notes.join(' • ') : null;
 }
 
-export async function fetchOverpassAccessibility(bbox) {
+export async function fetchOverpassAccessibility(bbox, { signal } = {}) {
   const values = bbox.split(',').map(Number);
 
   if (values.length !== 4 || values.some((n) => !Number.isFinite(n))) {
@@ -137,8 +137,11 @@ out center tags;
   let lastError;
 
   for (const endpoint of OVERPASS_ENDPOINTS) {
+    if (signal?.aborted) throw new DOMException('Richiesta annullata', 'AbortError');
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 25_000);
+    const timeout = setTimeout(() => controller.abort(), 15_000);
+    const abortFromCaller = () => controller.abort();
+    signal?.addEventListener('abort', abortFromCaller, { once: true });
 
     try {
       const response = await fetch(endpoint, {
@@ -165,6 +168,7 @@ out center tags;
       lastError = null;
       break;
     } catch (error) {
+      if (signal?.aborted) throw error;
       if (error.name === 'AbortError') {
         lastError = new Error('Overpass API: richiesta scaduta');
       } else if (error instanceof TypeError) {
@@ -175,6 +179,7 @@ out center tags;
       }
     } finally {
       clearTimeout(timeout);
+      signal?.removeEventListener('abort', abortFromCaller);
     }
   }
 

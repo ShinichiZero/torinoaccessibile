@@ -116,6 +116,10 @@ export async function parseGtfsStops() {
           properties.stopCode ??
           null,
 
+        locationType:
+          properties.locationType ??
+          null,
+
         name:
           properties.name ||
           'Fermata GTT',
@@ -167,5 +171,8 @@ export async function parseGtfsStops() {
     );
   }
 
-  return stops;
+  return {
+    stops,
+    metadata: geojson.metadata ?? {},
+  };
 }

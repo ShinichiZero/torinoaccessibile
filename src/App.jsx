@@ -1,9 +1,19 @@
+import { useState } from 'react';
 import Header from './components/Header';
 import MapView from './components/MapView';
 import Footer from './components/Footer';
 import './App.css';
 
+function formatDate(value) {
+  if (!value) return null;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+  return new Intl.DateTimeFormat('it-IT', { dateStyle: 'long', timeZone: 'Europe/Rome' }).format(date);
+}
+
 function App() {
+  const [dataset, setDataset] = useState({ status: 'loading', stops: [], metadata: {} });
+
   return (
     <div className="app">
       <Header />
@@ -25,9 +35,7 @@ function App() {
             </h1>
 
             <p className="hero__description">
-              Esplora le fermate GTT e gli elementi
-              di accessibilità mappati sul territorio
-              di Torino.
+              Esplora le fermate GTT e gli elementi di accessibilità a Torino e nell’area coperta dal feed.
             </p>
 
             <div className="hero__sources">
@@ -51,7 +59,7 @@ function App() {
           <div className="stats-grid">
             <div className="stat-card">
               <span className="stat-card__value">
-                7.123
+                {dataset.status === 'ready' ? dataset.stops.length.toLocaleString('it-IT') : '—'}
               </span>
 
               <span className="stat-card__label">
@@ -61,27 +69,27 @@ function App() {
 
             <div className="stat-card stat-card--positive">
               <span className="stat-card__value">
-                2.764
+                {dataset.status === 'ready' ? dataset.stops.filter((stop) => stop.properties.wheelchair === 'yes').length.toLocaleString('it-IT') : '—'}
               </span>
 
               <span className="stat-card__label">
-                Accessibilità dichiarata
+                Valore GTFS: sì
               </span>
             </div>
 
             <div className="stat-card stat-card--negative">
               <span className="stat-card__value">
-                1.083
+                {dataset.status === 'ready' ? dataset.stops.filter((stop) => stop.properties.wheelchair === 'no').length.toLocaleString('it-IT') : '—'}
               </span>
 
               <span className="stat-card__label">
-                Non accessibili dichiarate
+                Valore GTFS: no
               </span>
             </div>
 
             <div className="stat-card stat-card--unknown">
               <span className="stat-card__value">
-                3.276
+                {dataset.status === 'ready' ? dataset.stops.filter((stop) => stop.properties.wheelchair === 'unknown').length.toLocaleString('it-IT') : '—'}
               </span>
 
               <span className="stat-card__label">
@@ -89,6 +97,13 @@ function App() {
               </span>
             </div>
           </div>
+          <p className="stats-note" aria-live="polite">
+            {dataset.status === 'loading' && 'Caricamento dati GTT…'}
+            {dataset.status === 'error' && 'Statistiche non disponibili: il dataset GTT non è stato caricato.'}
+            {dataset.status === 'ready' && (formatDate(dataset.metadata.generatedAt)
+              ? `Dati GTFS elaborati il ${formatDate(dataset.metadata.generatedAt)}.${dataset.isStale ? ' Dataset oltre 30 giorni: i dati potrebbero essere obsoleti.' : ''}${formatDate(dataset.metadata.sourceUpdatedAt) ? ` La fonte riporta un aggiornamento al ${formatDate(dataset.metadata.sourceUpdatedAt)}.` : ''}`
+              : 'Data di elaborazione GTFS non disponibile.')}
+          </p>
         </section>
 
         <section
@@ -113,7 +128,7 @@ function App() {
             </p>
           </div>
 
-          <MapView />
+          <MapView onDatasetChange={setDataset} />
         </section>
 
         <section
@@ -135,15 +150,11 @@ function App() {
                 </h2>
 
                 <p>
-                  <strong>Accessibile</strong> significa
-                  che la fonte dichiara la fermata
-                  accessibile.
+                  <strong>Accessibilità indicata nel feed GTFS</strong> descrive il valore dichiarato nel campo wheelchair_boarding. Per una fermata senza piattaforme figlie, “sì” indica che alcuni veicoli possono essere accessibili; per una piattaforma indica la presenza di un percorso accessibile. Il significato dipende quindi dal tipo di fermata.
                 </p>
 
                 <p>
-                  <strong>Non accessibile</strong> significa
-                  che la fonte dichiara esplicitamente
-                  la non accessibilità.
+                  <strong>Non accessibile secondo il feed</strong> riporta il valore esplicito “no” della fonte, senza una verifica sul posto.
                 </p>
 
                 <p>
@@ -152,6 +163,17 @@ function App() {
                   un'informazione sufficiente per
                   classificare la fermata.
                 </p>
+              </div>
+            </article>
+
+            <article className="information-card">
+              <span className="information-card__icon" aria-hidden="true">⌕</span>
+              <div>
+                <h2>Limiti e privacy</h2>
+                <p>Il dato GTFS non verifica il veicolo in arrivo né l’intero viaggio. Marciapiedi, rampe, ascensori e percorsi non sono verificati da questa mappa.</p>
+                <p>Le mappe di base sono richieste a OpenStreetMap; i dati aggiuntivi vengono richiesti a Overpass solo quando premi il pulsante e includono l’area visibile della mappa. Questi servizi ricevono la normale richiesta di rete, incluso l’indirizzo IP.</p>
+                <p>L’elenco cercabile delle fermate è un’alternativa alla navigazione della mappa. L’accessibilità dei controlli mappa può variare con browser e tecnologia assistiva.</p>
+                <p><a href="https://github.com/ShinichiZero/torinoaccessibile/issues" target="_blank" rel="noreferrer">Segnala un errore o chiedi una correzione</a>. <a href="https://gtfs.org/documentation/schedule/reference/#stopstxt" target="_blank" rel="noreferrer">Metodologia del campo GTFS</a>.</p>
               </div>
             </article>
 

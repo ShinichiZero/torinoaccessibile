@@ -11,6 +11,7 @@ dist-ssr/
 
 # Local archives, editor state, and operating system files
 *.zip
+public/data/torino_gtfs.metadata.json
 .kilo/
 .DS_Store
 .idea/
@@ -33,3 +34,4 @@ lerna-debug.log*
 *.sln
 *.sw?
 *.local
+.vercel

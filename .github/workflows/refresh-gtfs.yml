@@ -1,0 +1,52 @@
+name: Refresh GTFS stops
+
+on:
+  schedule:
+    - cron: '15 7 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: gtfs-refresh
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run refresh:gtfs
+      - name: Open or update data review pull request
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if git diff --quiet -- public/data/gtt-stops.json; then
+            echo 'GTFS dataset is unchanged.'
+            exit 0
+          fi
+
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git checkout -B automation/gtfs-refresh
+          git add public/data/gtt-stops.json
+          git commit -m 'chore: refresh GTT GTFS stops'
+          git push --force origin automation/gtfs-refresh
+
+          pr_number=$(gh pr list --state open --head automation/gtfs-refresh --json number --jq '.[0].number // empty')
+          if [ -z "$pr_number" ]; then
+            gh pr create \
+              --base "${{ github.event.repository.default_branch }}" \
+              --head automation/gtfs-refresh \
+              --title 'chore: refresh GTT GTFS stops' \
+              --body 'Weekly refresh of the published GTT GTFS stop dataset. Review the generated changes and freshness metadata before merging.'
+          fi

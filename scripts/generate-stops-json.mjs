@@ -15,39 +15,47 @@ const outputPath = path.resolve(
   __dirname,
   '../public/data/gtt-stops.json'
 );
+const sourceMetadataPath = path.resolve(__dirname, '../public/data/torino_gtfs.metadata.json');
 
-function parseCsvLine(line) {
-  const values = [];
-  let current = '';
+function parseCsv(content) {
+  const records = [];
+  let record = [];
+  let field = '';
   let quoted = false;
 
-  for (let i = 0; i < line.length; i += 1) {
-    const char = line[i];
-    const next = line[i + 1];
-
-    if (char === '"' && quoted && next === '"') {
-      current += '"';
-      i += 1;
-      continue;
+  for (let index = 0; index < content.length; index += 1) {
+    const char = content[index];
+    if (quoted) {
+      if (char === '"' && content[index + 1] === '"') {
+        field += '"';
+        index += 1;
+      } else if (char === '"') {
+        quoted = false;
+      } else {
+        field += char;
+      }
+    } else if (char === '"' && field.length === 0) {
+      quoted = true;
+    } else if (char === ',') {
+      record.push(field);
+      field = '';
+    } else if (char === '\n' || char === '\r') {
+      if (char === '\r' && content[index + 1] === '\n') index += 1;
+      record.push(field);
+      if (record.some((value) => value.length > 0)) records.push(record);
+      record = [];
+      field = '';
+    } else {
+      field += char;
     }
-
-    if (char === '"') {
-      quoted = !quoted;
-      continue;
-    }
-
-    if (char === ',' && !quoted) {
-      values.push(current);
-      current = '';
-      continue;
-    }
-
-    current += char;
   }
 
-  values.push(current);
-
-  return values;
+  if (quoted) throw new Error('CSV stops.txt non valido: campo quotato non chiuso.');
+  if (field.length > 0 || record.length > 0) {
+    record.push(field);
+    records.push(record);
+  }
+  return records;
 }
 
 if (!fs.existsSync(zipPath)) {
@@ -62,12 +70,13 @@ if (!entry) {
 }
 
 const content = entry.getData().toString('utf8').replace(/^\uFEFF/, '');
-const lines = content.split(/\r?\n/).filter(Boolean);
+const [headers, ...records] = parseCsv(content);
+const requiredHeaders = ['stop_id', 'stop_lat', 'stop_lon'];
+if (!headers || requiredHeaders.some((header) => !headers.includes(header))) {
+  throw new Error(`stops.txt deve contenere: ${requiredHeaders.join(', ')}`);
+}
 
-const headers = parseCsvLine(lines[0]);
-
-const rows = lines.slice(1).map((line) => {
-  const values = parseCsvLine(line);
+const rows = records.map((values) => {
 
   return Object.fromEntries(
     headers.map((header, index) => [
@@ -91,12 +100,15 @@ function mapWheelchair(value) {
 const features = [];
 
 for (const row of rows) {
+  if (!String(row.stop_id ?? '').trim()) continue;
+  if (!String(row.stop_lat ?? '').trim() || !String(row.stop_lon ?? '').trim()) continue;
   const lat = Number(row.stop_lat);
   const lon = Number(row.stop_lon);
 
   if (
     !Number.isFinite(lat) ||
-    !Number.isFinite(lon)
+    !Number.isFinite(lon) ||
+    lat < -90 || lat > 90 || lon < -180 || lon > 180
   ) {
     continue;
   }
@@ -120,6 +132,7 @@ for (const row of rows) {
     properties: {
       stopId: id,
       stopCode: code || null,
+      locationType: String(row.location_type ?? '').trim() || null,
       name: name || `Fermata ${id}`,
       description: desc || null,
       url: url || null,
@@ -132,11 +145,32 @@ for (const row of rows) {
   });
 }
 
+if (features.length === 0) {
+  throw new Error('Il feed non contiene fermate con ID e coordinate valide; dataset precedente preservato.');
+}
+
+let previousDataset = null;
+if (fs.existsSync(outputPath)) {
+  try {
+    previousDataset = JSON.parse(fs.readFileSync(outputPath, 'utf8'));
+  } catch {
+    // A new valid dataset can repair an unreadable previous file.
+  }
+}
+const featuresUnchanged =
+  Array.isArray(previousDataset?.features) &&
+  JSON.stringify(previousDataset.features) === JSON.stringify(features);
+
 const output = {
   type: 'FeatureCollection',
   features,
   metadata: {
-    generatedAt: new Date().toISOString(),
+    generatedAt: featuresUnchanged && previousDataset.metadata?.generatedAt
+      ? previousDataset.metadata.generatedAt
+      : new Date().toISOString(),
+    sourceUpdatedAt: fs.existsSync(sourceMetadataPath)
+      ? JSON.parse(fs.readFileSync(sourceMetadataPath, 'utf8')).sourceUpdatedAt
+      : null,
     source: 'GTT GTFS statico (aperTO)',
     totalStops: features.length,
   },
@@ -146,10 +180,9 @@ fs.mkdirSync(path.dirname(outputPath), {
   recursive: true,
 });
 
-fs.writeFileSync(
-  outputPath,
-  JSON.stringify(output, null, 2)
-);
+const temporaryPath = `${outputPath}.tmp`;
+fs.writeFileSync(temporaryPath, JSON.stringify(output, null, 2));
+fs.renameSync(temporaryPath, outputPath);
 
 console.log(`Generati ${features.length} stop in:`);
 console.log(outputPath);
