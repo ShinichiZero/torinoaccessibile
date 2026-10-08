@@ -3,9 +3,9 @@
 Updated: 2026-10-08
 
 - Branch: `fix/accessibility-audit`
-- Base remediation commit: `db61360` (`fix: complete accessibility and GTFS audit remediation`), based on `e3dfa72ff4f5becafc74920694e1e1ceee73057f`; pushed checkpoint commit `9c6294e`.
+- Base remediation commit: `db61360` (`fix: complete accessibility and GTFS audit remediation`), based on `e3dfa72ff4f5becafc74920694e1e1ceee73057f`; latest pushed implementation/test commit `c7a7f18`.
 - Remote: `origin` = `https://github.com/ShinichiZero/torinoaccessibile.git`; `git fetch origin` succeeded with escalation during this session.
-- Source, refreshed dataset, tests, workflows, and documentation are committed. Protected preview browser run passed 14/14 on `9c6294e`. CI on that head failed only the keyboard-only scenario because it depended on platform-specific native select behavior; test was simplified and local combined suite passes. New test harness and this documentation update are uncommitted; preserve them.
+- Source, refreshed dataset, tests, workflows, and documentation are committed through `c7a7f18`. Final local combined suite passes (29 unit + 15 E2E), build passes, and `git diff --check` passes. On `c7a7f18`, GitHub CI passed all steps (29 unit + 14 E2E) and exact protected Vercel preview passed 14/14. The new no-console/page-error assertion was then added and passes locally; commit/push it with this checkpoint update and rerun exact-head CI/preview.
 
 ## Completed in this session
 
@@ -22,8 +22,8 @@ Application/services/scripts/workflows/package files and new tests/configs are l
 
 ## Open issues / exact next actions
 
-1. Commit/push the scoped preview-auth test helper and deterministic keyboard test; inspect new-head CI and Vercel preview.
-2. Perform manual screen reader QA if available. Do not merge if any critical gate remains unverified.
-3. Only after every gate genuinely passes, merge using supported GitHub merge; then verify production deployment and anonymous smoke.
+1. Commit/push the no-console/page-error assertion and final verification docs; inspect the resulting exact-head CI and Vercel status and run the preview suite.
+2. The VoiceOver/manual screen-reader gap is documented; no formal compliance claim is made. Do not merge if a critical gate remains unverified.
+3. Once exact-head checks pass, merge using supported GitHub merge; then verify production deployment and anonymous smoke.
 
-PR #1 is open. Initial GitHub CI failed one platform-dependent keyboard test; the test has been corrected locally and requires a new-head CI run. A Ready protected preview for `9c6294e` passed all 14 browser tests; a fresh preview check is required after the test-only commit. No production deployment, live Overpass integration, or manual screen-reader test has been performed.
+PR #1 is open. Current pushed head `c7a7f18` has green CI and Vercel, and protected preview Playwright passed 14/14. A new local 15th browser test checks no runtime/console errors and passes locally. No production deployment, live Overpass integration, or manual screen-reader test has been performed. Commit the test/docs update, then recheck the exact head before merge.

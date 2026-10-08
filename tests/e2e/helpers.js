@@ -12,3 +12,12 @@ export async function addVercelPreviewAuthentication(page, baseURL) {
     },
   }));
 }
+
+export async function stubMapTiles(page) {
+  const transparentPixel = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=', 'base64');
+  await page.route('https://*.tile.openstreetmap.org/**', (route) => route.fulfill({
+    status: 200,
+    contentType: 'image/png',
+    body: transparentPixel,
+  }));
+}

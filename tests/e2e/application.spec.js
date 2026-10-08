@@ -1,11 +1,24 @@
 import { expect, test } from '@playwright/test';
-import { addVercelPreviewAuthentication } from './helpers.js';
+import { addVercelPreviewAuthentication, stubMapTiles } from './helpers.js';
+
+const browserErrors = new WeakMap();
 
 test.beforeEach(async ({ page }, testInfo) => {
+  const errors = [];
+  browserErrors.set(page, errors);
+  page.on('pageerror', (error) => errors.push(`Uncaught exception: ${error.message}`));
+  page.on('console', (message) => {
+    if (message.type() === 'error') errors.push(message.text());
+  });
   await addVercelPreviewAuthentication(page, testInfo.project.use.baseURL);
-  await page.route('https://*.tile.openstreetmap.org/**', (route) => route.abort());
+  await stubMapTiles(page);
   await page.goto('/');
   await expect(page.locator('.stats-section .stats-grid')).toBeVisible();
+});
+
+test('loads with no uncaught JavaScript or console errors', async ({ page }) => {
+  await expect(page.locator('.stats-section .stat-card__value').first()).toHaveText(/7[.,]?054/);
+  expect(browserErrors.get(page)).toEqual([]);
 });
 
 test('loads the dataset and keeps headline counts consistent', async ({ page }) => {

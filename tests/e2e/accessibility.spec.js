@@ -1,10 +1,10 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
-import { addVercelPreviewAuthentication } from './helpers.js';
+import { addVercelPreviewAuthentication, stubMapTiles } from './helpers.js';
 
 test('has no serious or critical axe violations on the main experience', async ({ page }, testInfo) => {
   await addVercelPreviewAuthentication(page, testInfo.project.use.baseURL);
-  await page.route('https://*.tile.openstreetmap.org/**', (route) => route.abort());
+  await stubMapTiles(page);
   await page.goto('/');
   await expect(page.getByRole('searchbox', { name: 'Nome o codice fermata' })).toBeEnabled();
   const results = await new AxeBuilder({ page })
