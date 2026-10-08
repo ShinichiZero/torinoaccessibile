@@ -1,6 +1,8 @@
 import { expect, test } from '@playwright/test';
+import { addVercelPreviewAuthentication } from './helpers.js';
 
-test.beforeEach(async ({ page }) => {
+test.beforeEach(async ({ page }, testInfo) => {
+  await addVercelPreviewAuthentication(page, testInfo.project.use.baseURL);
   await page.route('https://*.tile.openstreetmap.org/**', (route) => route.abort());
   await page.goto('/');
   await expect(page.locator('.stats-section .stats-grid')).toBeVisible();
@@ -97,10 +99,8 @@ test('supports a keyboard-only search, selection, source link, and return to res
   await expect(page.getByRole('searchbox', { name: 'Nome o codice fermata' })).toBeFocused();
   await page.keyboard.type('Duomo');
   await page.keyboard.press('Tab');
-  await page.keyboard.press('Home');
-  await page.keyboard.press('ArrowDown');
-  await page.keyboard.press('Enter');
   await page.keyboard.press('Tab');
+  await expect(page.getByRole('button', { name: 'Mostra dettagli di Fermata 243 - DUOMO - MUSEI REALI' })).toBeFocused();
   await page.keyboard.press('Enter');
   await expect(page.getByRole('heading', { name: 'Dettagli fermata' })).toBeFocused();
   await page.keyboard.press('Tab');

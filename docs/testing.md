@@ -14,8 +14,9 @@ Results below were executed locally on 2026-10-08 after `npm ci`.
 | `npm audit` | PASS | 0 vulnerabilities (full dependency tree). |
 | GTFS structural validation | PASS | Refreshed official feed: 7,054 features, unique IDs, valid coordinates/geometries, expected value counts; see `data-sources.md`. |
 | `git diff --check` | PASS | No whitespace errors after the final source, dataset, and documentation edits. |
-| CI on PR | NOT RUN | No remediation PR has been created yet. |
-| Live Overpass / production / preview | NOT RUN | No live external requests or deployment verification performed. |
+| GitHub CI | FAIL on initial PR head | 13/14 E2E passed; keyboard test relied on native select keyboard behavior and got no detail heading in CI. Simplified the test to avoid platform-dependent select interaction; local combined suite passes 29 + 14. New PR head CI is pending. |
+| Protected PR preview | PASS on `9c6294e` | Vercel Ready deployment `torino-accessibile-avb0kc6fc-elle6.vercel.app`, exact previous PR head; Playwright ran 14/14 against deployed app using a short-lived Vercel token scoped only to that origin. Test-harness-only changes since then are locally verified; rerun preview after latest push. |
+| Live Overpass / production | NOT RUN | OSM requests are mocked in E2E. Production stays on main; no production smoke/deploy performed. |
 | Manual screen reader QA | NOT RUN | VoiceOver not exercised. |
 
-Unit tests exercise GTFS parsing and normalization, CSV quoting/multiline/BOM/line endings and invalid input, atomic output preservation, search/filter behavior, and Overpass bounding boxes, aborts, timeouts, rate limits, and failover. E2E stubs all external map/Overpass traffic. Live public Overpass availability is intentionally not part of ordinary CI.
+Unit tests exercise GTFS parsing and normalization, feed metadata, CSV quoting/multiline/BOM/line endings and invalid input, atomic output preservation, search/filter behavior, and Overpass bounding boxes, aborts, timeouts, rate limits, and failover. E2E stubs all external map/Overpass traffic. The Playwright config accepts `BASE_URL`; protected preview runs add the short-lived OIDC header only to that exact `.vercel.app` origin. Live public Overpass availability is intentionally not part of ordinary CI.

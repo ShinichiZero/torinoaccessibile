@@ -3,9 +3,9 @@
 Updated: 2026-10-08
 
 - Branch: `fix/accessibility-audit`
-- Remediation commit: `db61360` (`fix: complete accessibility and GTFS audit remediation`), based on `e3dfa72ff4f5becafc74920694e1e1ceee73057f`.
+- Base remediation commit: `db61360` (`fix: complete accessibility and GTFS audit remediation`), based on `e3dfa72ff4f5becafc74920694e1e1ceee73057f`; pushed checkpoint commit `9c6294e`.
 - Remote: `origin` = `https://github.com/ShinichiZero/torinoaccessibile.git`; `git fetch origin` succeeded with escalation during this session.
-- Source, refreshed dataset, tests, workflows, and documentation are committed. A checkpoint-only documentation update may follow; preserve any later changes and do not reset/clean.
+- Source, refreshed dataset, tests, workflows, and documentation are committed. Protected preview browser run passed 14/14 on `9c6294e`. CI on that head failed only the keyboard-only scenario because it depended on platform-specific native select behavior; test was simplified and local combined suite passes. New test harness and this documentation update are uncommitted; preserve them.
 
 ## Completed in this session
 
@@ -22,8 +22,8 @@ Application/services/scripts/workflows/package files and new tests/configs are l
 
 ## Open issues / exact next actions
 
-1. Push the committed authorized branch and create/review the PR; inspect exact-head CI and Vercel preview.
+1. Commit/push the scoped preview-auth test helper and deterministic keyboard test; inspect new-head CI and Vercel preview.
 2. Perform manual screen reader QA if available. Do not merge if any critical gate remains unverified.
 3. Only after every gate genuinely passes, merge using supported GitHub merge; then verify production deployment and anonymous smoke.
 
-No remediation PR, CI run, preview for the final head, production deployment, live Overpass integration, or manual screen-reader test has been verified yet. Existing Vercel preview for `e3dfa72` is Ready; it predates current changes.
+PR #1 is open. Initial GitHub CI failed one platform-dependent keyboard test; the test has been corrected locally and requires a new-head CI run. A Ready protected preview for `9c6294e` passed all 14 browser tests; a fresh preview check is required after the test-only commit. No production deployment, live Overpass integration, or manual screen-reader test has been performed.
