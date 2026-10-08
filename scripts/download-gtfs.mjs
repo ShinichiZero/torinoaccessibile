@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import AdmZip from 'adm-zip';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -18,6 +19,19 @@ const OUTPUT_FILE = path.join(
   'torino_gtfs.zip'
 );
 const METADATA_FILE = path.join(OUTPUT_DIR, 'torino_gtfs.metadata.json');
+
+export function validateGtfsArchive(buffer) {
+  let archive;
+  try {
+    archive = new AdmZip(buffer);
+  } catch {
+    throw new Error('L’archivio GTFS scaricato non è un ZIP valido.');
+  }
+  if (!archive.getEntry('stops.txt')) {
+    throw new Error('L’archivio scaricato non contiene stops.txt.');
+  }
+  return true;
+}
 
 async function getGtfsResourceUrl() {
   console.log('Recupero metadata GTFS da aperTO...');
@@ -122,6 +136,7 @@ async function downloadGtfs() {
       'Il file scaricato è troppo piccolo per essere un GTFS valido.'
     );
   }
+  validateGtfsArchive(buffer);
 
   fs.mkdirSync(
     OUTPUT_DIR,
@@ -130,16 +145,24 @@ async function downloadGtfs() {
     }
   );
 
-  fs.writeFileSync(
-    OUTPUT_FILE,
-    buffer
-  );
-  fs.writeFileSync(METADATA_FILE, JSON.stringify({
-    resourceName: resource.name ?? null,
-    sourceUpdatedAt: resource.last_modified ?? resource.metadata_modified ?? null,
-    sourceUrl: resource.url,
-    downloadedAt: new Date().toISOString(),
-  }, null, 2));
+  const temporaryPath = `${OUTPUT_FILE}.${process.pid}.tmp`;
+  const metadataTemporaryPath = `${METADATA_FILE}.${process.pid}.tmp`;
+  try {
+    fs.writeFileSync(temporaryPath, buffer, { flag: 'wx' });
+    validateGtfsArchive(fs.readFileSync(temporaryPath));
+    fs.writeFileSync(metadataTemporaryPath, JSON.stringify({
+      resourceName: resource.name ?? null,
+      sourceUpdatedAt: resource.last_modified ?? resource.metadata_modified ?? null,
+      sourceUrl: resource.url,
+      downloadedAt: new Date().toISOString(),
+    }, null, 2), { flag: 'wx' });
+    fs.renameSync(temporaryPath, OUTPUT_FILE);
+    fs.renameSync(metadataTemporaryPath, METADATA_FILE);
+  } finally {
+    for (const file of [temporaryPath, metadataTemporaryPath]) {
+      if (fs.existsSync(file)) fs.unlinkSync(file);
+    }
+  }
 
   console.log('');
   console.log(
@@ -151,14 +174,10 @@ async function downloadGtfs() {
   );
 }
 
-downloadGtfs().catch(
-  (error) => {
+if (process.argv[1] && path.resolve(process.argv[1]) === __filename) {
+  downloadGtfs().catch((error) => {
     console.error('');
-    console.error(
-      'ERRORE:',
-      error.message
-    );
-
+    console.error('ERRORE:', error.message);
     process.exit(1);
-  }
-);
+  });
+}

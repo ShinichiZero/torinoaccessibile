@@ -16,9 +16,10 @@ function App() {
 
   return (
     <div className="app">
+      <a className="skip-link" href="#main-content">Vai al contenuto</a>
       <Header />
 
-      <main className="main-content">
+      <main className="main-content" id="main-content" tabIndex="-1">
         <section
           className="hero"
           aria-labelledby="page-title"
@@ -101,7 +102,7 @@ function App() {
             {dataset.status === 'loading' && 'Caricamento dati GTT…'}
             {dataset.status === 'error' && 'Statistiche non disponibili: il dataset GTT non è stato caricato.'}
             {dataset.status === 'ready' && (formatDate(dataset.metadata.generatedAt)
-              ? `Dati GTFS elaborati il ${formatDate(dataset.metadata.generatedAt)}.${dataset.isStale ? ' Dataset oltre 30 giorni: i dati potrebbero essere obsoleti.' : ''}${formatDate(dataset.metadata.sourceUpdatedAt) ? ` La fonte riporta un aggiornamento al ${formatDate(dataset.metadata.sourceUpdatedAt)}.` : ''}`
+              ? `Dati GTFS elaborati il ${formatDate(dataset.metadata.generatedAt)}.${dataset.isStale ? ' Feed oltre 30 giorni: i dati potrebbero essere obsoleti.' : ''}${dataset.metadata.feedVersionDate ? ` Versione dichiarata nel feed: ${formatDate(dataset.metadata.feedVersionDate)}.` : ''}${dataset.metadata.feedStartDate && dataset.metadata.feedEndDate ? ` Periodo del feed: ${formatDate(dataset.metadata.feedStartDate)} – ${formatDate(dataset.metadata.feedEndDate)}.` : ''}${formatDate(dataset.metadata.sourceUpdatedAt) ? ` Data di modifica registrata nel catalogo aperTO: ${formatDate(dataset.metadata.sourceUpdatedAt)}.` : ''}`
               : 'Data di elaborazione GTFS non disponibile.')}
           </p>
         </section>
@@ -122,9 +123,7 @@ function App() {
             </div>
 
             <p>
-              Seleziona un punto sulla mappa
-              per visualizzare le informazioni
-              disponibili.
+              Cerca una fermata nell’elenco oppure seleziona un punto sulla mappa per consultarne i dati disponibili.
             </p>
           </div>
 

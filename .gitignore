@@ -21,6 +21,8 @@ public/data/torino_gtfs.metadata.json
 # Logs
 logs/
 *.log
+test-results/
+playwright-report/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*

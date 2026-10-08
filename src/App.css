@@ -5,6 +5,22 @@
   background: #f5f7fa;
 }
 
+.skip-link {
+  position: fixed;
+  z-index: 2000;
+  top: 0.5rem;
+  left: 0.5rem;
+  padding: 0.75rem 1rem;
+  transform: translateY(-160%);
+  border: 2px solid #101828;
+  border-radius: 6px;
+  background: #fff;
+  color: #101828;
+  font-weight: 700;
+}
+
+.skip-link:focus { transform: translateY(0); }
+
 .main-content {
   flex: 1;
 }
@@ -287,6 +303,8 @@
   background: #e5e7eb;
 }
 
+.map-region { width: 100%; height: 100%; }
+
 .accessibility-marker {
   background: transparent;
   border: 0;
@@ -297,16 +315,14 @@
    ========================================= */
 
 .map-toolbar {
-  position: absolute;
-  top: 1rem;
-  left: 1rem;
-  right: 1rem;
-  z-index: 900;
+  position: static;
+  padding: 1rem;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  pointer-events: none;
+  border-bottom: 1px solid #d9dee5;
+  background: #fff;
 }
 
 .map-toolbar__stats {
@@ -410,11 +426,9 @@
    ========================================= */
 
 .map-warning {
-  position: absolute;
-  top: 5.8rem;
-  left: 1rem;
-  z-index: 900;
-  width: min(460px, calc(100% - 2rem));
+  position: static;
+  width: 100%;
+  margin: 0;
   padding: 0.85rem 1rem;
   border: 1px solid #c27a00;
   border-left: 4px solid #a15c00;
@@ -440,29 +454,27 @@
    ========================================= */
 
 .map-legend {
-  position: absolute;
-  right: 1rem;
-  bottom: 1rem;
-  z-index: 900;
-  min-width: 220px;
-  padding: 0.9rem;
+  position: static;
+  min-width: 0;
+  padding: 0.85rem 1rem;
   display: flex;
-  flex-direction: column;
-  gap: 0.45rem;
-  border: 1px solid #cfd6df;
-  border-radius: 10px;
-  background: rgba(255, 255, 255, 0.96);
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem 1rem;
+  border-top: 1px solid #cfd6df;
+  background: #ffffff;
   color: #344054;
-  box-shadow: 0 5px 18px rgba(16, 24, 40, 0.15);
   font-size: 0.75rem;
-  backdrop-filter: blur(6px);
 }
 
 .map-legend > strong {
-  margin-bottom: 0.15rem;
+  margin-right: 0.25rem;
   color: #101828;
   font-size: 0.8rem;
 }
+
+.map-attribution { flex-basis: 100%; color: #475467; font-size: 0.7rem; }
+.map-attribution a { color: #004a99; }
 
 .legend-item {
   display: flex;
@@ -569,6 +581,7 @@
 .stop-search__controls label { color: #344054; font-size: 0.8rem; font-weight: 700; }
 .stop-search__controls input, .stop-search__controls select { min-height: 44px; padding: 0.55rem 0.7rem; border: 1px solid #98a2b3; border-radius: 7px; background: #fff; color: #101828; }
 .stop-search__count { margin: 0.75rem 0; color: #475467; font-size: 0.8rem; }
+.stop-search__empty { margin: 0.5rem 0; padding: 0.75rem; border-radius: 6px; background: #f2f4f7; color: #344054; }
 
 .stop-results {
   max-height: 420px;
@@ -600,6 +613,7 @@
 .stop-results button:hover { background: #f2f7ff; border-color: #005fcc; }
 .stop-results button span { color: #475467; font-size: 0.75rem; }
 .selected-stop { margin: 1rem 0; padding: 0.9rem; display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center; border-left: 4px solid #005fcc; background: #f2f7ff; color: #101828; }
+.selected-stop h4 { width: 100%; margin: 0; font-size: 0.9rem; }
 .selected-stop button { min-height: 40px; padding: 0.4rem 0.7rem; border: 1px solid #005fcc; border-radius: 6px; background: white; color: #004a99; cursor: pointer; }
 
 /* =========================================
@@ -780,7 +794,9 @@
 
 button:focus-visible,
 a:focus-visible,
-[tabindex]:focus-visible {
+[tabindex]:focus-visible,
+input:focus-visible,
+select:focus-visible {
   outline: 3px solid #111111;
   outline-offset: 3px;
 }
@@ -909,21 +925,14 @@ a:focus-visible,
     width: 100%;
   }
 
-  .map-legend {
-    right: 0.6rem;
-    bottom: 0.6rem;
-    min-width: 195px;
-    max-width: 220px;
-  }
+  .map-legend { gap: 0.5rem 0.75rem; }
 
   .stop-search__heading { align-items: flex-start; flex-direction: column; }
   .stop-search__controls { grid-template-columns: 1fr; }
   .stop-results { grid-template-columns: 1fr; }
 
   .map-warning {
-    top: 7.8rem;
-    left: 0.6rem;
-    width: calc(100% - 1.2rem);
+    width: 100%;
   }
 
   .map-data-bar {

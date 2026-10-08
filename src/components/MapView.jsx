@@ -11,7 +11,8 @@ import MarkerClusterGroup from 'react-leaflet-cluster';
 import 'leaflet/dist/leaflet.css';
 
 import { fetchOverpassAccessibility } from '../services/overpassApi';
-import { parseGtfsStops } from '../services/gtfsParser';
+import { isGtfsDatasetStale, parseGtfsStops } from '../services/gtfsParser';
+import StopSearch from './StopSearch';
 
 const TORINO_BOUNDS = [
   [44.30, 7.05],
@@ -50,7 +51,19 @@ function MapControls({ onBboxChange }) {
   return null;
 }
 
-function MarkerWithPopup({ feature, icon }) {
+function FocusSelectedStop({ stop }) {
+  const map = useMap();
+  useEffect(() => {
+    if (stop) map.flyTo([stop.lat, stop.lon], Math.max(map.getZoom(), 15), { animate: false });
+  }, [map, stop]);
+  return null;
+}
+
+function MarkerWithPopup({ feature, icon, selected = false, onSelect }) {
+  const markerRef = useRef(null);
+  useEffect(() => {
+    if (selected) markerRef.current?.openPopup();
+  }, [selected]);
   const { lat, lon, properties = {} } = feature;
 
   if (
@@ -79,7 +92,9 @@ function MarkerWithPopup({ feature, icon }) {
     <Marker
       position={[lat, lon]}
       icon={icon}
+      ref={markerRef}
       title={`${title}. ${isGtfs ? `Accessibilità indicata nel feed GTFS: ${wheelchairLabel}` : 'Elemento OpenStreetMap'}`}
+      eventHandlers={isGtfs && onSelect ? { click: () => onSelect(feature) } : undefined}
     >
       <Popup>
         <div className="map-popup">
@@ -214,8 +229,6 @@ export default function MapView({ onDatasetChange }) {
   const [datasetMetadata, setDatasetMetadata] = useState({});
   const [osmLoadedBbox, setOsmLoadedBbox] = useState(null);
   const [osmLoadedAt, setOsmLoadedAt] = useState(null);
-  const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
   const [selectedStop, setSelectedStop] = useState(null);
   const activeOsmController = useRef(null);
   const osmRequestId = useRef(0);
@@ -237,8 +250,7 @@ export default function MapView({ onDatasetChange }) {
         if (!cancelled) {
           setGtfsStops(stops.stops);
           setDatasetMetadata(stops.metadata);
-          const generatedAtMs = Date.parse(stops.metadata.generatedAt ?? '');
-          const isStale = !Number.isFinite(generatedAtMs) || Date.now() - generatedAtMs > 30 * 86400000;
+          const isStale = isGtfsDatasetStale(stops.metadata);
           onDatasetChange?.({ status: 'ready', stops: stops.stops, metadata: stops.metadata, isStale });
         }
       } catch (error) {
@@ -540,7 +552,13 @@ export default function MapView({ onDatasetChange }) {
 
   const mapMarkers =
     useMemo(() => {
-      const [minLon, minLat, maxLon, maxLat] = bbox.split(',').map(Number);
+      const [rawMinLon, rawMinLat, rawMaxLon, rawMaxLat] = bbox.split(',').map(Number);
+      const lonInset = (rawMaxLon - rawMinLon) * 0.04;
+      const latInset = (rawMaxLat - rawMinLat) * 0.04;
+      const minLon = rawMinLon + lonInset;
+      const maxLon = rawMaxLon - lonInset;
+      const minLat = rawMinLat + latInset;
+      const maxLat = rawMaxLat - latInset;
       const gtfs =
         gtfsStops.filter(({ lat, lon }) => lat >= minLat && lat <= maxLat && lon >= minLon && lon <= maxLon).map(
           (feature, index) => (
@@ -553,6 +571,8 @@ export default function MapView({ onDatasetChange }) {
               icon={getGtfsIcon(
                 feature
               )}
+                selected={feature.id === selectedStop?.id}
+                onSelect={setSelectedStop}
             />
           )
         );
@@ -583,22 +603,39 @@ export default function MapView({ onDatasetChange }) {
       bbox,
       getGtfsIcon,
       getOsmIcon,
+      selectedStop?.id,
     ]);
 
   return (
     <div className="map-container">
+      <StopSearch
+        stops={gtfsStops}
+        metadata={datasetMetadata}
+        loading={gtfsLoading}
+        error={gtfsError}
+        selectedStop={selectedStop}
+        onSelectStop={setSelectedStop}
+      />
+      <div className="map-toolbar">
+        <div className="map-toolbar__stats"><strong>{gtfsStops.length.toLocaleString('it-IT')}</strong><span>fermate GTT</span></div>
+        <button type="button" className="osm-button" onClick={loadOsmData} disabled={osmLoading || cooldownRemaining > 0}>
+          {osmLoading ? 'Caricamento…' : cooldownRemaining > 0 ? `Riprova tra ${cooldownRemaining}s` : osmFeatures.length > 0 ? 'Aggiorna dati OSM' : 'Carica dati OpenStreetMap'}
+        </button>
+      </div>
       <div className="map-shell">
+        <div className="map-region" role="region" aria-label="Mappa interattiva delle fermate GTT e degli elementi OpenStreetMap">
         <MapContainer
           center={TORINO_CENTER}
-          zoom={10}
+          zoom={12}
           minZoom={7}
           maxZoom={18}
           maxBounds={TORINO_BOUNDS}
           maxBoundsViscosity={0.8}
           scrollWheelZoom
+          attributionControl={false}
         >
           <TileLayer
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">OpenStreetMap contributors</a>'
+            attribution=""
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           />
 
@@ -607,6 +644,8 @@ export default function MapView({ onDatasetChange }) {
               setBbox
             }
           />
+
+          <FocusSelectedStop stop={selectedStop} />
 
           {needsClustering ? (
             <MarkerClusterGroup
@@ -619,6 +658,7 @@ export default function MapView({ onDatasetChange }) {
             mapMarkers
           )}
         </MapContainer>
+        </div>
 
         {gtfsLoading && (
           <div
@@ -639,91 +679,23 @@ export default function MapView({ onDatasetChange }) {
           </div>
         )}
 
-        <div className="map-toolbar">
-          <div className="map-toolbar__stats">
-            <strong>
-              {gtfsStops.length.toLocaleString(
-                'it-IT'
-              )}
-            </strong>
+      </div>
 
-            <span>
-              fermate GTT
-            </span>
-          </div>
+      {(gtfsError || osmError) && (
+        <aside className="map-warning" role="status" aria-live="polite">
+          <strong>Alcuni dati non sono disponibili</strong>
+          {gtfsError && <p>Fermate GTT: {gtfsError}</p>}
+          {osmError && <p>{osmError}</p>}
+        </aside>
+      )}
 
-          <button
-            type="button"
-            className="osm-button"
-            onClick={
-              loadOsmData
-            }
-            disabled={
-              osmLoading ||
-              cooldownRemaining > 0
-            }
-          >
-            {osmLoading
-              ? 'Caricamento…'
-              : cooldownRemaining > 0
-                ? `Riprova tra ${cooldownRemaining}s`
-                : osmFeatures.length > 0
-                  ? 'Aggiorna dati OSM'
-                  : 'Carica dati OpenStreetMap'}
-          </button>
-        </div>
-
-        {(gtfsError ||
-          osmError) && (
-          <aside
-            className="map-warning"
-            role="status"
-            aria-live="polite"
-          >
-            <strong>
-              Alcuni dati non sono disponibili
-            </strong>
-
-            {gtfsError && (
-              <p>
-                Fermate GTT:{' '}
-                {gtfsError}
-              </p>
-            )}
-
-            {osmError && (
-              <p>
-                {osmError}
-              </p>
-            )}
-          </aside>
-        )}
-
-        <div className="map-legend">
-          <strong>
-            Legenda
-          </strong>
-
-          <div className="legend-item">
-            <span className="legend-dot legend-dot--yes" />
-            GTFS: valore “sì”
-          </div>
-
-          <div className="legend-item">
-            <span className="legend-dot legend-dot--no" />
-            GTFS: valore “no”
-          </div>
-
-          <div className="legend-item">
-            <span className="legend-dot legend-dot--unknown" />
-            Informazione non disponibile
-          </div>
-
-          <div className="legend-item">
-            <span className="legend-dot legend-dot--osm" />
-            Elemento OpenStreetMap
-          </div>
-        </div>
+      <div className="map-legend">
+        <strong>Legenda</strong>
+        <div className="legend-item"><span className="legend-dot legend-dot--yes" aria-hidden="true" />GTFS: valore “sì”</div>
+        <div className="legend-item"><span className="legend-dot legend-dot--no" aria-hidden="true" />GTFS: valore “no”</div>
+        <div className="legend-item"><span className="legend-dot legend-dot--unknown" aria-hidden="true" />Informazione non disponibile</div>
+        <div className="legend-item"><span className="legend-dot legend-dot--osm" aria-hidden="true" />Elemento OpenStreetMap</div>
+        <span className="map-attribution">Mappa: <a href="https://leafletjs.com" target="_blank" rel="noreferrer">Leaflet</a>. Dati mappa © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">OpenStreetMap contributors</a>.</span>
       </div>
 
       {osmLoadedBbox && (
@@ -781,28 +753,6 @@ export default function MapView({ onDatasetChange }) {
           </span>
         </div>
       </div>
-      <section className="stop-search" aria-labelledby="stop-search-title">
-        <div className="stop-search__heading">
-          <div><h3 id="stop-search-title">Trova una fermata</h3><p>Cerca per nome o codice, anche senza usare la mappa.</p></div>
-          {datasetMetadata.generatedAt && <span>Dati elaborati: {new Intl.DateTimeFormat('it-IT', { dateStyle: 'medium' }).format(new Date(datasetMetadata.generatedAt))}</span>}
-        </div>
-        <div className="stop-search__controls">
-          <label htmlFor="stop-search-input">Nome o codice fermata</label>
-          <input id="stop-search-input" type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Es. Porta Nuova" disabled={gtfsLoading || Boolean(gtfsError)} />
-          <label htmlFor="stop-status-filter">Accessibilità indicata nel feed</label>
-          <select id="stop-status-filter" value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)} disabled={gtfsLoading || Boolean(gtfsError)}><option value="all">Tutti i valori</option><option value="yes">Sì</option><option value="no">No</option><option value="unknown">Non disponibile</option></select>
-        </div>
-        {selectedStop && <div className="selected-stop" aria-live="polite"><strong>{selectedStop.properties.name}</strong><span>Accessibilità indicata nel feed GTFS: {selectedStop.properties.wheelchair === 'yes' ? 'sì' : selectedStop.properties.wheelchair === 'no' ? 'no' : 'non disponibile'}.</span>{selectedStop.properties.stopCode && <span>Codice: {selectedStop.properties.stopCode}</span>}<button type="button" onClick={() => setSelectedStop(null)}>Chiudi dettagli</button></div>}
-        {(() => {
-          const query = search.trim().toLocaleLowerCase('it');
-          const matches = gtfsStops.filter((stop) => {
-            const name = stop.properties.name.toLocaleLowerCase('it');
-            const code = String(stop.properties.stopCode ?? '').toLocaleLowerCase('it');
-            return (!query || name.includes(query) || code.includes(query)) && (statusFilter === 'all' || stop.properties.wheelchair === statusFilter);
-          });
-          return <><p className="stop-search__count" aria-live="polite">{gtfsLoading ? 'Caricamento fermate…' : gtfsError ? 'Elenco non disponibile.' : `${matches.length.toLocaleString('it-IT')} risultati${matches.length > 60 ? ' (primi 60 mostrati)' : ''}`}</p><ul className="stop-results" aria-label="Risultati fermate">{matches.slice(0, 60).map((stop) => <li key={stop.id}><button type="button" onClick={() => setSelectedStop(stop)}><strong>{stop.properties.name}</strong><span>{stop.properties.stopCode ? `Codice ${stop.properties.stopCode} · ` : ''}{stop.properties.wheelchair === 'yes' ? 'GTFS: sì' : stop.properties.wheelchair === 'no' ? 'GTFS: no' : 'GTFS: non disponibile'}</span></button></li>)}</ul></>;
-        })()}
-      </section>
     </div>
   );
 }

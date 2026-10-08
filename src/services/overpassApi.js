@@ -5,6 +5,24 @@ const OVERPASS_ENDPOINTS = [
   'https://overpass-api.de/api/interpreter',
   'https://overpass.private.coffee/api/interpreter',
 ];
+const MAX_BBOX_WIDTH = 0.75;
+const MAX_BBOX_HEIGHT = 0.75;
+const MAX_BBOX_AREA = 0.35;
+
+export function validateOverpassBbox(bbox) {
+  const values = String(bbox).split(',').map(Number);
+  if (values.length !== 4 || values.some((number) => !Number.isFinite(number))) {
+    throw new Error('BBox non valida. Formato richiesto: minLon,minLat,maxLon,maxLat.');
+  }
+  const [minLon, minLat, maxLon, maxLat] = values;
+  if (minLon < -180 || maxLon > 180 || minLat < -90 || maxLat > 90 || minLon >= maxLon || minLat >= maxLat) {
+    throw new Error('BBox non valida: coordinate fuori intervallo, invertite o area nulla.');
+  }
+  if (maxLon - minLon > MAX_BBOX_WIDTH || maxLat - minLat > MAX_BBOX_HEIGHT || (maxLon - minLon) * (maxLat - minLat) > MAX_BBOX_AREA) {
+    throw new Error('Area troppo ampia per la richiesta OSM. Ingrandisci la zona che ti interessa e riprova.');
+  }
+  return [minLon, minLat, maxLon, maxLat];
+}
 
 function getElementCoordinates(element) {
   if (
@@ -102,20 +120,8 @@ function buildNote(tags) {
   return notes.length > 0 ? notes.join(' • ') : null;
 }
 
-export async function fetchOverpassAccessibility(bbox, { signal } = {}) {
-  const values = bbox.split(',').map(Number);
-
-  if (values.length !== 4 || values.some((n) => !Number.isFinite(n))) {
-    throw new Error(
-      'BBox non valida. Formato richiesto: minLon,minLat,maxLon,maxLat'
-    );
-  }
-
-  const [minLon, minLat, maxLon, maxLat] = values;
-
-  if (minLon >= maxLon || minLat >= maxLat) {
-    throw new Error('BBox non valida: coordinate invertite o area nulla');
-  }
+export async function fetchOverpassAccessibility(bbox, { signal, fetchImpl = fetch, timeoutMs = 15_000, endpoints = OVERPASS_ENDPOINTS } = {}) {
+  const [minLon, minLat, maxLon, maxLat] = validateOverpassBbox(bbox);
 
   const query = `
 [out:json][timeout:20];
@@ -136,15 +142,16 @@ out center tags;
   let data;
   let lastError;
 
-  for (const endpoint of OVERPASS_ENDPOINTS) {
+  for (const endpoint of endpoints) {
     if (signal?.aborted) throw new DOMException('Richiesta annullata', 'AbortError');
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 15_000);
+    let timedOut = false;
+    const timeout = setTimeout(() => { timedOut = true; controller.abort(); }, timeoutMs);
     const abortFromCaller = () => controller.abort();
     signal?.addEventListener('abort', abortFromCaller, { once: true });
 
     try {
-      const response = await fetch(endpoint, {
+      const response = await fetchImpl(endpoint, {
         method: 'POST',
         signal: controller.signal,
         headers: {
@@ -170,7 +177,10 @@ out center tags;
     } catch (error) {
       if (signal?.aborted) throw error;
       if (error.name === 'AbortError') {
-        lastError = new Error('Overpass API: richiesta scaduta');
+        lastError = timedOut
+          ? new Error('Overpass API: richiesta scaduta')
+          : error;
+        if (!timedOut) throw error;
       } else if (error instanceof TypeError) {
         // Fetch uses TypeError for network/CORS failures; try the other host.
         lastError = new Error('Overpass API non raggiungibile');
