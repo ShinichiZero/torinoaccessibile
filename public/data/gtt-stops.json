@@ -15458,29 +15458,6 @@
       }
     },
     {
-      "id": "gtfs-693",
-      "type": "Feature",
-      "geometry": {
-        "type": "Point",
-        "coordinates": [
-          7.61469,
-          45.08241
-        ]
-      },
-      "properties": {
-        "stopId": "693",
-        "stopCode": "1620",
-        "locationType": null,
-        "name": "Fermata 1620 - ANTICA DI COLLEGNO",
-        "description": "C. SACCO E VANZETTI DOPO STR. A. DI COLLEGNO",
-        "url": "http://www.gtt.to.it/cms/percorari/arrivi?option=com_gtt&view=palina&palina=1620",
-        "wheelchair": "yes",
-        "wheelchairBoardingRaw": "1",
-        "source": "GTT/5T",
-        "sourceUrl": "https://aperto.comune.torino.it/dataset/feed-gtfs-trasporti-gtt"
-      }
-    },
-    {
       "id": "gtfs-694",
       "type": "Feature",
       "geometry": {
@@ -22496,29 +22473,6 @@
       }
     },
     {
-      "id": "gtfs-1008",
-      "type": "Feature",
-      "geometry": {
-        "type": "Point",
-        "coordinates": [
-          7.61213,
-          45.08223
-        ]
-      },
-      "properties": {
-        "stopId": "1008",
-        "stopCode": "1917",
-        "locationType": null,
-        "name": "Fermata 1917 - ANTICA DI COLLEGNO OVEST",
-        "description": "STR. ANTICA DI COLLEGNO FRONTE N.266",
-        "url": "http://www.gtt.to.it/cms/percorari/arrivi?option=com_gtt&view=palina&palina=1917",
-        "wheelchair": "yes",
-        "wheelchairBoardingRaw": "1",
-        "source": "GTT/5T",
-        "sourceUrl": "https://aperto.comune.torino.it/dataset/feed-gtfs-trasporti-gtt"
-      }
-    },
-    {
       "id": "gtfs-1009",
       "type": "Feature",
       "geometry": {
@@ -23876,29 +23830,6 @@
       }
     },
     {
-      "id": "gtfs-1071",
-      "type": "Feature",
-      "geometry": {
-        "type": "Point",
-        "coordinates": [
-          7.61671,
-          45.08235
-        ]
-      },
-      "properties": {
-        "stopId": "1071",
-        "stopCode": "1977",
-        "locationType": null,
-        "name": "Fermata 1977 - BERRUTI",
-        "description": "STR. ANTICA DI COLLEGNO / V. BIANCO",
-        "url": "http://www.gtt.to.it/cms/percorari/arrivi?option=com_gtt&view=palina&palina=1977",
-        "wheelchair": "yes",
-        "wheelchairBoardingRaw": "1",
-        "source": "GTT/5T",
-        "sourceUrl": "https://aperto.comune.torino.it/dataset/feed-gtfs-trasporti-gtt"
-      }
-    },
-    {
       "id": "gtfs-1072",
       "type": "Feature",
       "geometry": {
@@ -23915,29 +23846,6 @@
         "name": "Fermata 1978 - CASCINETTE",
         "description": "STR. CASCINETTE DOPO C. GIULIO CESARE",
         "url": "http://www.gtt.to.it/cms/percorari/arrivi?option=com_gtt&view=palina&palina=1978",
-        "wheelchair": "yes",
-        "wheelchairBoardingRaw": "1",
-        "source": "GTT/5T",
-        "sourceUrl": "https://aperto.comune.torino.it/dataset/feed-gtfs-trasporti-gtt"
-      }
-    },
-    {
-      "id": "gtfs-1073",
-      "type": "Feature",
-      "geometry": {
-        "type": "Point",
-        "coordinates": [
-          7.62038,
-          45.08177
-        ]
-      },
-      "properties": {
-        "stopId": "1073",
-        "stopCode": "1979",
-        "locationType": null,
-        "name": "Fermata 1979 - SOSTEGNO",
-        "description": "STR. ANTICA DI COLLEGNO / V. SOSTEGNO",
-        "url": "http://www.gtt.to.it/cms/percorari/arrivi?option=com_gtt&view=palina&palina=1979",
         "wheelchair": "yes",
         "wheelchairBoardingRaw": "1",
         "source": "GTT/5T",
@@ -77489,6 +77397,29 @@
       }
     },
     {
+      "id": "gtfs-8665",
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          7.82356,
+          45.00671
+        ]
+      },
+      "properties": {
+        "stopId": "8665",
+        "stopCode": "6195",
+        "locationType": null,
+        "name": "Fermata 6195 - FS STAZIONE CAP",
+        "description": "STAZIONE",
+        "url": "http://www.gtt.to.it/cms/percorari/arrivi?option=com_gtt&view=palina&palina=6195",
+        "wheelchair": "yes",
+        "wheelchairBoardingRaw": "1",
+        "source": "GTT/5T",
+        "sourceUrl": "https://aperto.comune.torino.it/dataset/feed-gtfs-trasporti-gtt"
+      }
+    },
+    {
       "id": "gtfs-3402",
       "type": "Feature",
       "geometry": {
@@ -82565,6 +82496,29 @@
         "name": "Fermata 833 - DELLA CROCE",
         "description": "V. VENARIA DOPO N.39 / I COLLEGNO",
         "url": "http://www.gtt.to.it/cms/percorari/arrivi?option=com_gtt&view=palina&palina=833",
+        "wheelchair": "yes",
+        "wheelchairBoardingRaw": "1",
+        "source": "GTT/5T",
+        "sourceUrl": "https://aperto.comune.torino.it/dataset/feed-gtfs-trasporti-gtt"
+      }
+    },
+    {
+      "id": "gtfs-8889",
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          7.60589,
+          45.00845
+        ]
+      },
+      "properties": {
+        "stopId": "8889",
+        "stopCode": "8331",
+        "locationType": null,
+        "name": "Fermata 8331 - RONDO' BERNARDO",
+        "description": null,
+        "url": "http://www.gtt.to.it/cms/percorari/arrivi?option=com_gtt&view=palina&palina=8331",
         "wheelchair": "yes",
         "wheelchairBoardingRaw": "1",
         "source": "GTT/5T",
@@ -162246,12 +162200,12 @@
   ],
   "metadata": {
     "sourceUpdatedAt": "2020-01-07T12:58:13.954411",
-    "feedVersion": "20261007",
-    "feedVersionDate": "2026-10-07",
-    "feedStartDate": "2026-10-06",
+    "feedVersion": "20261011",
+    "feedVersionDate": "2026-10-11",
+    "feedStartDate": "2026-10-10",
     "feedEndDate": "2027-01-31",
     "source": "GTT GTFS statico (aperTO)",
-    "totalStops": 7054,
-    "generatedAt": "2026-10-08T10:19:46.657Z"
+    "totalStops": 7052,
+    "generatedAt": "2026-10-12T16:42:37.592Z"
   }
 }
